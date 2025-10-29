@@ -12,12 +12,23 @@ def fetch_historical_data(ticker_symbol, start_date='2020-01-01'):
     """Fetches historical 'Close' price data for a given ticker."""
     try:
         # Get data up to the present day
-        data = yf.download(ticker_symbol, start=start_date, end=date.today())
+        data = yf.download(ticker_symbol, start=start_date, end=date.today(), progress = False)
         
         if data.empty:
             print(f"Error: Could not retrieve data for ticker {ticker_symbol}. Check the ticker symbol.")
             return None
-            
+
+        # 1. SUCCESS LOGIC: Extract and clean the 'Close' data here (in the 'try' block)
+        # Note: I'm assuming you want to return the full DataFrame for `predict_stock_price`
+        # but if you only want the 'Close' series, adjust the return below.
+        df = data[['Close']].copy()
+        df.index = pd.to_datetime(df.index)
+        return df # <--- Return the processed DataFrame on success
+    
+    except Exception as e:
+        # 2. ERROR LOGIC: Catch any exceptions (network errors, API issues, etc.)
+        print(f"An unexpected error occurred while fetching data for {ticker_symbol}: {e}")
+        return None # <--- Return None on failure
         # We'll use the 'Close' price for the prediction
         df = data[['Close']].copy()
         df.index = pd.to_datetime(df.index)
