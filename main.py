@@ -26,14 +26,6 @@ def fetch_historical_data(ticker_symbol, start_date='2020-01-01'):
         return df # <--- Return the processed DataFrame on success
     
     except Exception as e:
-        # 2. ERROR LOGIC: Catch any exceptions (network errors, API issues, etc.)
-        print(f"An unexpected error occurred while fetching data for {ticker_symbol}: {e}")
-        return None # <--- Return None on failure
-        # We'll use the 'Close' price for the prediction
-        df = data[['Close']].copy()
-        df.index = pd.to_datetime(df.index)
-        return df
-    except Exception as e:
         print(f"An error occurred during data fetch: {e}")
         return None
 
@@ -83,7 +75,7 @@ def predict_stock_price(df, n_periods=2):
             future_dates.append(current_date)
 
     forecast_df = pd.DataFrame({
-        'Predicted Price': predictions,
+        'Predicted Price': predictions.values,
         'Lower Bound (95%)': conf_int[:, 0],
         'Upper Bound (95%)': conf_int[:, 1]
     }, index=future_dates)
@@ -126,7 +118,7 @@ def main():
     
     print("\n--- Current Data ---")
     print(f"Last available closing date: {historical_data.index[-1].strftime('%Y-%m-%d')}")
-    print(f"Last closing price: ${last_close_price:.2f}")
+    print(f"Last closing price: ${last_close_price[0]}")
 
     # 3. Generate Predictions (for today and tomorrow's close)
     # The first prediction will be for the next *trading* day (which could be today or tomorrow)
@@ -150,7 +142,7 @@ def main():
     # Prediction for the next trading day's close
     next_day_pred = forecast_results.iloc[0]['Predicted Price']
     next_day_date = forecast_results.index[0].strftime('%Y-%m-%d')
-    status_1, change_1 = determine_market_status(last_close_price, next_day_pred)
+    status_1, change_1 = determine_market_status(last_close_price[0], next_day_pred)
     
     print(f"\nPrediction for **{next_day_date} (Next Trading Day)**:")
     print(f"  Predicted Closing Price: **${next_day_pred:.2f}**")
@@ -162,7 +154,7 @@ def main():
     if forecast_periods > 1:
         day_after_pred = forecast_results.iloc[1]['Predicted Price']
         day_after_date = forecast_results.index[1].strftime('%Y-%m-%d')
-        status_2, change_2 = determine_market_status(last_close_price, day_after_pred)
+        status_2, change_2 = determine_market_status(last_close_price[0], day_after_pred)
 
         print(f"\nPrediction for **{day_after_date} (The Trading Day After)**:")
         print(f"  Predicted Closing Price: **${day_after_pred:.2f}**")
